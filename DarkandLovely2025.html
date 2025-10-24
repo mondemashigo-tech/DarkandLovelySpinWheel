@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spin the Wheel — Updated</title>
+  <style>
+    body {
+      background: #DAB1DA;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      font-family: "Gotham", "Gotham Book", "Gotham SSm A", "Gotham SSm B", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      box-shadow: inset 0 0 50px rgba(0,0,0,0.04);
+      color: #000004;
+    }
+    #wheel {
+      filter: drop-shadow(0 10px 18px rgba(0,0,0,0.25));
+    }
+    .pointer {
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.28));
+      transform: rotate(180deg);
+    }
+    #spin {
+      background-color: #67318C;
+      color: #fff;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.22);
+      transition: transform 0.2s;
+      font-family: inherit;
+    }
+    #spin:hover { transform: scale(1.05); }
+    h2 { margin: 0 0 4px; font-weight: 800; color: #ffffff; font-size: 40px; }
+    h3 { color: #ffffff; margin: 0 0 18px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h2>Spin the Wheel</h2>
+  <h3>Spin for a chance to win amazing prizes!</h3>
+
+  <!-- Pointer facing down, silver -->
+  <svg class="pointer" width="54" height="40" viewBox="0 0 30 24" aria-hidden="true">
+    <polygon points="15,0 30,24 0,24" fill="#C0C0C0" />
+  </svg>
+
+  <!-- Bigger Wheel with silver border -->
+  <svg id="wheel" width="700" height="700" viewBox="0 0 420 420" aria-label="Prize wheel">
+    <circle cx="210" cy="210" r="205" fill="none" stroke="#C0C0C0" stroke-width="8" />
+    <g id="rotor" transform="rotate(0 210 210)"></g>
+    <circle cx="210" cy="210" r="14" fill="#67318C" />
+  </svg>
+
+  <div>
+    <button id="spin">Spin the Wheel</button>
+  </div>
+
+  <p id="result"></p>
+
+  <script>
+    const N = 8;
+    const labels = [
+      "Brush",
+      "Wallet",
+      "Comb set",
+      "Hair ties",
+      "Hair curlers",
+      "Cosmetic bag",
+      "25% off voucher",
+      "Sorry next time",
+    ];
+    const colors = ["#ffffff", "#67318C", "#D6CAE2", "#000004", "#ffffff", "#67318C", "#D6CAE2", "#000004"];
+
+    const sliceAngle = 360 / N;
+    const cx = 210, cy = 210, r = 190;
+
+    function polarToCartesian(cx, cy, r, angleDeg){
+      const rad = (angleDeg - 90) * Math.PI / 180;
+      return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    }
+    function describeArc(cx, cy, r, startAngle, endAngle){
+      const start = polarToCartesian(cx, cy, r, endAngle);
+      const end = polarToCartesian(cx, cy, r, startAngle);
+      const largeArc = (endAngle - startAngle) <= 180 ? '0' : '1';
+      return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 0 ${end.x} ${end.y} Z`;
+    }
+
+    const rotor = document.getElementById('rotor');
+    for(let i=0;i<N;i++){
+      const start = i * sliceAngle;
+      const end   = (i+1) * sliceAngle;
+      const mid   = start + sliceAngle/2;
+
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', describeArc(cx, cy, r, start, end));
+      path.setAttribute('fill', colors[i % colors.length]);
+      path.setAttribute('stroke', '#D6CAE2');
+      path.setAttribute('stroke-width', '2');
+      g.appendChild(path);
+
+      const pos = polarToCartesian(cx, cy, r * 0.75, mid);
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', pos.x);
+      text.setAttribute('y', pos.y);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('dominant-baseline', 'middle');
+      text.setAttribute('font-size', '14');
+      text.setAttribute('transform', `rotate(${mid} ${pos.x} ${pos.y})`);
+      text.setAttribute('font-family', 'Gotham, "Gotham Book", "Gotham SSm A", "Gotham SSm B", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif');
+      const fillColor = colors[i % colors.length] === '#ffffff' ? '#67318C' : '#ffffff';
+      text.setAttribute('fill', fillColor);
+      text.textContent = labels[i];
+      g.appendChild(text);
+
+      rotor.appendChild(g);
+    }
+
+    const btn = document.getElementById('spin');
+    const resultEl = document.getElementById('result');
+    let baseAngle = 0;
+    let spinning = false;
+
+    function easeOutCubic(t){ return 1 - Math.pow(1 - t, 3); }
+
+    function animateRotation(from, to, duration, onDone){
+      const start = performance.now();
+      function frame(now){
+        const t = Math.min(1, (now - start) / duration);
+        const eased = easeOutCubic(t);
+        const ang = from + (to - from) * eased;
+        rotor.setAttribute('transform', `rotate(${ang} ${cx} ${cy})`);
+        if(t < 1) requestAnimationFrame(frame); else onDone && onDone();
+      }
+      requestAnimationFrame(frame);
+    }
+
+    btn.addEventListener('click', () => {
+      if(spinning) return;
+      spinning = true;
+      resultEl.textContent = '';
+
+      const winIndex = Math.floor(Math.random() * N);
+      const targetCenter = winIndex * sliceAngle + sliceAngle / 2;
+      const extraTurns = 4 + Math.floor(Math.random() * 4);
+      const nextAngle = baseAngle + extraTurns * 360 - targetCenter;
+
+      animateRotation(baseAngle, nextAngle, 2000, () => {
+        baseAngle = nextAngle % 360;
+        resultEl.textContent = `🎉 YOU WIN: ${labels[winIndex]}`;
+        spinning = false;
+      });
+    });
+  </script>
+</body>
+</html>
+
