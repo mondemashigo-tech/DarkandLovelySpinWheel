@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "R300 Trade Signal",
+    "slug": "r300-trade-signal",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#080810",
+    "splash": {
+      "backgroundColor": "#080810"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.r300tradesignal"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#080810"
+      },
+      "package": "com.r300tradesignal"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
