@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>R300 Trade Signal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#080810; --card:#0E0E1A; --text:#E8E4FF;
+  --green:#4DFF9F; --cyan:#2EE8FF; --gold:#FFC83D; --pink:#FF3D8A; --orange:#FF8C00;
+  --border:rgba(46,232,255,0.12); --muted:rgba(232,228,255,0.45); --dim:rgba(232,228,255,0.22);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Syne Mono',monospace;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(46,232,255,.025)1px,transparent 1px),linear-gradient(90deg,rgba(46,232,255,.025)1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+#app{position:relative;z-index:1;max-width:900px;margin:0 auto}
+
+/* ── Header ── */
+header{padding:1.2rem 1.5rem;border-bottom:1px solid var(--border)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.6rem;margin-bottom:.6rem}
+.logo{display:flex;align-items:center;gap:.6rem}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 6px var(--green)}50%{opacity:.4;box-shadow:0 0 14px var(--green)}}
+.title{font-family:'Bebas Neue',cursive;font-size:clamp(24px,5vw,40px);letter-spacing:.08em}
+.wk-badge{font-size:.75rem;color:var(--muted);display:flex;align-items:center;gap:.3rem}
+.wk-num{font-family:'Bebas Neue',cursive;font-size:1.7rem;color:var(--gold)}
+.prog-bar{height:3px;background:rgba(46,232,255,.1);border-radius:2px;margin-bottom:.9rem;overflow:hidden}
+.prog-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--cyan),var(--green));box-shadow:0 0 6px var(--cyan);transition:width 1s ease}
+.qa{display:flex;gap:.5rem;flex-wrap:wrap}
+.qa button{padding:.35rem .85rem;border-radius:6px;font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:1px solid;font-family:'Syne Mono',monospace;background:transparent;transition:opacity .2s}
+.qa button:hover{opacity:.75}
+
+/* ── Ticker tape ── */
+.tape-wrap{overflow:hidden;padding:.5rem 0;border-bottom:1px solid var(--border);border-top:1px solid var(--border);background:rgba(46,232,255,.02)}
+.tape{display:flex;gap:1.5rem;animation:tick 40s linear infinite;white-space:nowrap}
+@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ti{font-family:'Bebas Neue',cursive;font-size:.8rem;letter-spacing:.1em}
+.ti.etf{color:var(--cyan)}.ti.sh{color:var(--green)}.ti.cr{color:var(--orange)}
+
+/* ── Tabs ── */
+nav{display:flex;gap:.4rem;flex-wrap:wrap;padding:1rem 1.5rem 0}
+.tab-btn{padding:.38rem .85rem;border-radius:6px;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:1px solid rgba(232,228,255,.1);color:var(--muted);font-family:'Syne Mono',monospace;background:transparent;transition:all .2s}
+.tab-btn:hover{border-color:rgba(46,232,255,.3);color:var(--cyan)}
+.tab-btn.active{background:rgba(46,232,255,.1);border-color:var(--cyan);color:var(--cyan)}
+main{padding:1.2rem 1.5rem}
+.tab{display:none}.tab.active{display:block}
+
+/* ── Cards ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.1rem;margin-bottom:.85rem;animation:up .35s ease forwards;opacity:0;transition:border-color .2s,transform .2s}
+.card:hover{border-color:rgba(46,232,255,.25);transform:translateY(-1px)}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:4px;font-size:.64rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-right:.3rem;margin-bottom:.3rem}
+
+/* ── Layout ── */
+.row{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem}
+.row-wrap{display:flex;flex-wrap:wrap;margin:.55rem 0}
+.lbl{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.2rem}
+.tckr{font-family:'Bebas Neue',cursive;font-size:1.6rem}
+.amt{font-family:'Bebas Neue',cursive;font-size:2rem;color:var(--gold)}
+.sub{font-size:.74rem;color:var(--muted);line-height:1.55}
+.reason{border-left:2px solid rgba(46,232,255,.2);padding-left:.7rem;margin-top:.5rem}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-top:.5rem}
+.ibox{border-radius:6px;padding:.55rem .7rem}
+
+/* ── Progress ── */
+.pbar{height:6px;background:rgba(232,228,255,.07);border-radius:3px;overflow:hidden;margin-top:.35rem}
+.pfill{height:100%;border-radius:3px;transition:width .8s ease}
+
+/* ── Loading / prompts ── */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 1rem;gap:1rem}
+.spinner{width:20px;height:20px;border:2px solid rgba(46,232,255,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--cyan)}
+.prompt{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 1rem;gap:1.25rem}
+.prompt-lbl{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.gen-btn{padding:.7rem 2rem;border-radius:8px;border:1px solid;font-family:'Bebas Neue',cursive;font-size:1.1rem;letter-spacing:.1em;cursor:pointer;background:transparent;transition:opacity .2s}
+.gen-btn:hover{opacity:.75}
+
+/* ── Form ── */
+label{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:.28rem}
+input,select{width:100%;background:rgba(14,14,26,.9);border:1px solid rgba(46,232,255,.15);border-radius:6px;color:var(--text);padding:.52rem .72rem;font-family:'Syne Mono',monospace;font-size:.78rem;outline:none;transition:border-color .2s;margin-bottom:.7rem}
+input:focus,select:focus{border-color:rgba(46,232,255,.4)}
+select option{background:#0E0E1A}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.submit-btn{width:100%;padding:.72rem;border-radius:8px;border:1px solid var(--green);background:rgba(77,255,159,.08);color:var(--green);font-family:'Syne Mono',monospace;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-weight:700;transition:all .2s}
+.submit-btn:hover{background:rgba(77,255,159,.15)}
+.submit-btn.ok{background:var(--green);color:var(--bg)}
+.submit-btn:disabled{opacity:.4;cursor:not-allowed}
+.ghost-btn{width:100%;padding:.55rem;border:1px solid rgba(46,232,255,.14);background:transparent;color:var(--muted);font-family:'Syne Mono',monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;border-radius:8px;margin-top:.5rem;transition:border-color .2s}
+.ghost-btn:hover{border-color:rgba(46,232,255,.3)}
+
+/* ── Trade rows ── */
+.tr-row{display:flex;align-items:center;gap:.65rem;padding:.55rem 0;border-bottom:1px solid rgba(232,228,255,.05);font-size:.74rem}
+.tr-row:last-child{border-bottom:none}
+
+/* ── Responsive ── */
+@media(max-width:580px){
+  header,nav,main{padding-left:1rem;padding-right:1rem}
+  .fg2,.g2,.g3{grid-template-columns:1fr}
+}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:#0a0a12}
+::-webkit-scrollbar-thumb{background:rgba(46,232,255,.18);border-radius:3px}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <div class="hdr-top">
+      <div class="logo">
+        <div class="dot"></div>
+        <span class="title">R300 TRADE SIGNAL</span>
+      </div>
+      <div class="wk-badge">WEEK <span class="wk-num" id="wk">1</span> / 17</div>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+    <div class="qa">
+      <button style="border-color:var(--green);color:var(--green)" onclick="quickAction('today')">TODAY'S BUYS</button>
+      <button style="border-color:var(--gold);color:var(--gold)"  onclick="quickAction('week')">WEEK PLAN</button>
+      <button style="border-color:var(--pink);color:var(--pink)"  onclick="quickAction('exits')">EXIT SIGNALS</button>
+    </div>
+  </header>
+
+  <!-- Ticker tape -->
+  <div class="tape-wrap"><div class="tape" id="tape"></div></div>
+
+  <!-- Tabs -->
+  <nav id="tabnav">
+    <button class="tab-btn active" data-tab="today">TODAY</button>
+    <button class="tab-btn" data-tab="week">THIS WEEK</button>
+    <button class="tab-btn" data-tab="exits">EXIT SIGNALS</button>
+    <button class="tab-btn" data-tab="portfolio">PORTFOLIO</button>
+    <button class="tab-btn" data-tab="log">LOG</button>
+  </nav>
+
+  <main>
+    <div class="tab active" id="tab-today"></div>
+    <div class="tab" id="tab-week"></div>
+    <div class="tab" id="tab-exits"></div>
+    <div class="tab" id="tab-portfolio"></div>
+    <div class="tab" id="tab-log"></div>
+  </main>
+
+</div>
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────
+const START  = new Date('2026-06-02');
+const WEEKS  = 17;
+const TLIST  = ['CSP500','CTOP50','ETF500','ETF5IT','ETFGLD','ETFGGB','ETFBND','ETFEMA','ETFGRE','ETFPLD','CSGOVI','CSPROP','CSYSB','ABG','ACL','ADH','AEG','AFE','AFT','AGL','ANG','ANH','ACS','AFH','27FGMF','91DINC','91GINC','BTC','ETH'];
+const DAYCOL = {Monday:'var(--cyan)',Tuesday:'var(--green)',Wednesday:'var(--gold)',Thursday:'var(--orange)',Friday:'var(--pink)'};
+const SIGCFG = {'HOLD':{c:'var(--green)',b:'rgba(77,255,159,.3)'},'WATCH':{c:'var(--gold)',b:'rgba(255,200,61,.3)'},'TAKE PROFIT':{c:'var(--orange)',b:'rgba(255,140,0,.3)'},'EXIT NOW':{c:'var(--pink)',b:'rgba(255,61,138,.3)'}};
+
+// ── State ─────────────────────────────────────────────────────────────────
+let todayLoaded = false, weekLoaded = false, logReady = false;
+
+// ── Utils ─────────────────────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const CW = () => Math.max(1, Math.min(Math.floor((new Date()-START)/(7*86400000))+1, WEEKS));
+
+async function api(path) {
+  const r = await fetch(path);
+  const j = await r.json();
+  if (!r.ok || j.error) throw new Error(j.error||`HTTP ${r.status}`);
+  return j;
+}
+async function post(path, body) {
+  const r = await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j = await r.json();
+  if (!r.ok || j.error) throw new Error(j.error||`HTTP ${r.status}`);
+  return j;
+}
+
+function tc(type) { return type==='ETF'?'var(--cyan)':type==='Crypto'?'var(--orange)':'var(--green)'; }
+function uc(u)    { return u==='High'?'var(--pink)':u==='Medium'?'var(--gold)':'var(--cyan)'; }
+function cc(c)    { return c==='High'?'var(--green)':c==='Medium'?'var(--gold)':'var(--muted)'; }
+
+function bdg(label, color) {
+  const hex = color.replace('var(--','').replace(')','');
+  return `<span class="badge" style="background:${color}20;color:${color};border:1px solid ${color}55">${label}</span>`;
+}
+function load(msg='Analysing…') {
+  return `<div class="loading"><div class="spinner"></div><div class="loading-txt">${msg}</div></div>`;
+}
+function err(msg, retry) {
+  return `<div class="loading"><div style="font-size:2rem">⚠️</div><div style="color:var(--pink);font-size:.8rem;text-align:center;max-width:280px;line-height:1.5">${msg}</div></div>${retry?`<button class="ghost-btn" onclick="${retry}">RETRY</button>`:''}`;
+}
+function ibox(lbl, val, color) {
+  return `<div class="ibox" style="background:${color}0D;border:1px solid ${color}35"><div class="lbl" style="color:${color}">${lbl}</div><div style="color:${color};font-size:.85rem;font-weight:700">${val}</div></div>`;
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.tab===name);
+  });
+  $(`tab-${name}`).classList.add('active');
+  if (name==='portfolio') loadPortfolio();
+  if (name==='log' && !logReady) initLog();
+}
+
+function quickAction(name) {
+  showTab(name);
+  if (name==='today' && !todayLoaded) loadToday();
+  if (name==='week'  && !weekLoaded)  loadWeek();
+  if (name==='exits') loadExits();
+}
+
+document.getElementById('tabnav').addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn');
+  if (btn) showTab(btn.dataset.tab);
+});
+
+// ── TODAY ─────────────────────────────────────────────────────────────────
+$('tab-today').innerHTML = `<div class="prompt">
+  <div class="prompt-lbl">TODAY'S BUY SIGNALS</div>
+  <button class="gen-btn" style="border-color:var(--green);color:var(--green)" onclick="loadToday()">GENERATE SIGNALS</button>
+</div>`;
+
+async function loadToday(bypass=false) {
+  $('tab-today').innerHTML = load('Analysing JSE conditions…');
+  try {
+    const d = await api('/api/daily'+(bypass?'?refresh=1':''));
+    todayLoaded = true;
+    const sc = d.sentiment==='Bullish'?'var(--green)':d.sentiment==='Bearish'?'var(--pink)':'var(--gold)';
+    const dc = d.dayScore>=7?'var(--green)':d.dayScore>=4?'var(--gold)':'var(--pink)';
+    const cards = (d.signals||[]).map(s=>`
+      <div class="card">
+        <div class="row">
+          <div>
+            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.25rem">
+              <span class="tckr" style="color:${tc(s.type)}">${s.ticker}</span>${bdg(s.type,tc(s.type))}
+            </div>
+            <div class="sub">${s.name||''}</div>
+          </div>
+          <div class="amt">R${s.amount}</div>
+        </div>
+        <div class="row-wrap">
+          ${bdg(s.action, s.action==='BUY NOW'?'var(--green)':'var(--gold)')}
+          ${s.limitPrice?bdg('LIMIT @ '+s.limitPrice,'var(--gold)'):''}
+          ${bdg(s.urgency+' urgency',uc(s.urgency))}
+          ${bdg(s.conviction+' conviction',cc(s.conviction))}
+        </div>
+        <div class="reason"><div class="sub">${s.reason}</div></div>
+      </div>`).join('');
+    $('tab-today').innerHTML = `
+      <div class="card" style="border-color:${sc}35">
+        <div class="row">
+          <div><div class="lbl">MARKET SENTIMENT</div><div style="font-family:'Bebas Neue',cursive;font-size:1.55rem;color:${sc}">${d.sentiment}</div></div>
+          <div style="text-align:right"><div class="lbl">DAY SCORE</div><div style="font-family:'Bebas Neue',cursive;font-size:1.9rem;color:${dc}">${d.dayScore}<span style="font-size:.85rem;color:var(--muted)">/10</span></div></div>
+        </div>
+        <div class="sub" style="margin-top:.5rem">${d.marketSummary||''}</div>
+      </div>
+      ${cards}
+      <div class="card" style="border-color:rgba(255,200,61,.2);background:rgba(255,200,61,.03)">
+        <div class="row">
+          <div><div class="lbl">TOTAL TODAY</div><div style="font-family:'Bebas Neue',cursive;font-size:1.9rem;color:var(--gold)">R${d.totalZAR} <span style="font-size:.85rem;color:var(--muted)">/ R300</span></div></div>
+          ${d.avoid?.length?`<div style="text-align:right"><div class="lbl" style="color:var(--pink)">AVOID</div>${(d.avoid||[]).map(a=>bdg(a,'var(--pink)')).join('')}</div>`:''}
+        </div>
+        ${d.note?`<div class="sub" style="margin-top:.7rem;padding-top:.7rem;border-top:1px solid rgba(232,228,255,.06)">💡 ${d.note}</div>`:''}
+      </div>
+      <button class="ghost-btn" onclick="loadToday(true)">REFRESH (bypass cache)</button>`;
+  } catch(e) { $('tab-today').innerHTML = err(e.message,"loadToday()"); }
+}
+
+// ── THIS WEEK ─────────────────────────────────────────────────────────────
+$('tab-week').innerHTML = `<div class="prompt">
+  <div class="prompt-lbl">THIS WEEK'S INVESTMENT PLAN</div>
+  <button class="gen-btn" style="border-color:var(--gold);color:var(--gold)" onclick="loadWeek()">GENERATE WEEK PLAN</button>
+</div>`;
+
+async function loadWeek(bypass=false) {
+  $('tab-week').innerHTML = load('Strategising week plan…');
+  try {
+    const d  = await api('/api/weekly'+(bypass?'?refresh=1':''));
+    weekLoaded = true;
+    const rc = d.riskLevel==='High'?'var(--pink)':d.riskLevel==='Medium'?'var(--gold)':'var(--green)';
+    const buys = (d.buys||[]).map(b=>`
+      <div class="card">
+        <div class="row">
+          <div>
+            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.25rem">
+              <span class="tckr" style="color:${tc(b.type)}">${b.ticker}</span>${bdg(b.type,tc(b.type))}
+            </div>
+            <div class="sub">${b.name||''}</div>
+          </div>
+          <div class="amt">R${b.amount}</div>
+        </div>
+        <div class="row-wrap">
+          ${bdg('BUY '+(b.bestDay||'').toUpperCase(), DAYCOL[b.bestDay]||'var(--cyan)')}
+          ${bdg(b.conviction+' conviction',cc(b.conviction))}
+        </div>
+        <div class="g2">
+          <div class="ibox" style="background:rgba(77,255,159,.07);border:1px solid rgba(77,255,159,.25)"><div class="lbl" style="color:var(--green)">TARGET</div><div style="color:var(--green);font-size:.85rem;font-weight:700">${b.priceTarget}</div></div>
+          <div class="ibox" style="background:rgba(255,61,138,.07);border:1px solid rgba(255,61,138,.25)"><div class="lbl" style="color:var(--pink)">STOP LOSS</div><div style="color:var(--pink);font-size:.85rem;font-weight:700">${b.stopLoss}</div></div>
+        </div>
+        <div class="ibox" style="background:rgba(255,140,0,.07);border:1px solid rgba(255,140,0,.25);margin-top:.4rem">
+          <div class="lbl" style="color:var(--orange)">⚠ CEILING SIGNAL</div>
+          <div class="sub" style="color:var(--orange)">${b.ceilingSignal}</div>
+        </div>
+      </div>`).join('');
+    const days=['Monday','Tuesday','Wednesday','Thursday','Friday'];
+    const sched=(d.schedule||{});
+    $('tab-week').innerHTML = `
+      <div class="card" style="border-color:rgba(255,200,61,.2);background:rgba(255,200,61,.02)">
+        <div class="row" style="align-items:flex-start">
+          <div style="flex:1"><div class="lbl">WEEK ${d.weekNumber} THEME</div><div class="sub" style="color:var(--text);font-size:.8rem;line-height:1.6">${d.theme}</div></div>
+          <div style="text-align:right;margin-left:1rem;flex-shrink:0">
+            <div class="lbl">RISK</div><div style="font-family:'Bebas Neue',cursive;font-size:1.2rem;color:${rc}">${d.riskLevel}</div>
+            <div class="lbl" style="margin-top:.3rem">RETURN</div><div style="font-family:'Bebas Neue',cursive;font-size:1.2rem;color:var(--green)">${d.projectedReturn}</div>
+          </div>
+        </div>
+        ${d.weekGoal?`<div class="sub" style="margin-top:.7rem;padding-top:.7rem;border-top:1px solid rgba(232,228,255,.06)">🎯 ${d.weekGoal}</div>`:''}
+      </div>
+      ${buys}
+      ${d.reservePlan?`<div class="card" style="border-color:rgba(46,232,255,.2)"><div class="lbl" style="color:var(--cyan)">RESERVE — R30</div><div class="sub">${d.reservePlan}</div></div>`:''}
+      <div class="card">
+        <div class="lbl" style="margin-bottom:.75rem">WEEK SCHEDULE</div>
+        ${days.map(day=>`<div style="display:flex;align-items:flex-start;gap:.65rem;margin-bottom:.55rem">${bdg(day.slice(0,3).toUpperCase(),DAYCOL[day]||'var(--cyan)')}<div class="sub" style="flex:1">${sched[day]||''}</div></div>`).join('')}
+      </div>
+      <button class="ghost-btn" onclick="loadWeek(true)">REFRESH (bypass cache)</button>`;
+  } catch(e) { $('tab-week').innerHTML = err(e.message,"loadWeek()"); }
+}
+
+// ── EXIT SIGNALS ──────────────────────────────────────────────────────────
+$('tab-exits').innerHTML = `<div class="prompt">
+  <div class="prompt-lbl">EXIT SIGNAL ANALYSIS</div>
+  <button class="gen-btn" style="border-color:var(--pink);color:var(--pink)" onclick="loadExits()">ANALYSE POSITIONS</button>
+</div>`;
+
+async function loadExits(bypass=false) {
+  $('tab-exits').innerHTML = load('Analysing open positions…');
+  try {
+    const d = await api('/api/exits'+(bypass?'?refresh=1':''));
+    if (!d.positions?.length) {
+      $('tab-exits').innerHTML = `
+        <div class="loading"><div class="sub">No open positions to analyse</div><div style="color:var(--cyan);font-size:.75rem;margin-top:.4rem">Log trades in the LOG tab first</div></div>
+        ${d.healthNote?`<div class="card" style="border-color:rgba(46,232,255,.2)"><div class="lbl" style="color:var(--cyan)">PORTFOLIO HEALTH</div><div class="sub">${d.healthNote}</div></div>`:''}
+        <button class="ghost-btn" onclick="loadExits(true)">REFRESH</button>`;
+      return;
+    }
+    const cards = d.positions.map(p=>{
+      const cfg=SIGCFG[p.signal]||SIGCFG['HOLD'];
+      return `<div class="card" style="border-color:${cfg.b}">
+        <div class="row">
+          <div class="tckr" style="color:${cfg.c}">${p.ticker}</div>
+          <div style="text-align:right">
+            <span class="badge" style="background:${cfg.c}18;color:${cfg.c};border:1px solid ${cfg.b};font-size:.82rem;padding:4px 12px">${p.signal}</span><br>
+            <span style="display:inline-block;margin-top:.25rem">${bdg(p.urgency+' urgency',uc(p.urgency))}</span>
+          </div>
+        </div>
+        <div class="ibox" style="background:rgba(255,140,0,.06);border:1px solid rgba(255,140,0,.2);margin-top:.6rem">
+          <div class="lbl" style="color:var(--orange)">⚠ CEILING ASSESSMENT</div>
+          <div class="sub">${p.ceilingAssessment}</div>
+        </div>
+        <div class="ibox" style="background:${cfg.c}0A;border:1px solid ${cfg.b};margin-top:.4rem">
+          <div class="lbl" style="color:${cfg.c}">ACTION</div>
+          <div style="font-size:.82rem;color:var(--text);font-weight:600;line-height:1.5">${p.action}</div>
+        </div>
+        <div class="g2" style="margin-top:.4rem">
+          <div class="ibox" style="border:1px solid rgba(232,228,255,.07)"><div class="lbl">EXIT TARGET</div><div class="sub">${p.exitTarget}</div></div>
+          <div class="ibox" style="border:1px solid rgba(232,228,255,.07)"><div class="lbl" style="color:var(--cyan)">REINVEST IN</div><div class="sub" style="color:var(--cyan)">${p.reinvestSuggestion}</div></div>
+        </div>
+      </div>`;
+    }).join('');
+    $('tab-exits').innerHTML = `
+      ${cards}
+      ${d.healthNote?`<div class="card" style="border-color:rgba(46,232,255,.2);background:rgba(46,232,255,.03)"><div class="lbl" style="color:var(--cyan)">PORTFOLIO HEALTH</div><div class="sub">${d.healthNote}</div></div>`:''}
+      <button class="ghost-btn" onclick="loadExits(true)">REFRESH ANALYSIS (bypass cache)</button>`;
+  } catch(e) { $('tab-exits').innerHTML = err(e.message,"loadExits()"); }
+}
+
+// ── PORTFOLIO ─────────────────────────────────────────────────────────────
+async function loadPortfolio() {
+  $('tab-portfolio').innerHTML = load('Loading portfolio…');
+  try {
+    const d   = await api('/api/portfolio');
+    const wk  = d.currentWeek;
+    const wl  = WEEKS - wk;
+    const inv = d.totalInvested||0;
+    const pos = d.positions||[];
+    const pct = ((wk-1)/(WEEKS-1))*100;
+    const byt = {ETF:0,Share:0,Crypto:0};
+    pos.forEach(p=>{ if(byt[p.type]!==undefined) byt[p.type]+=p.invested; });
+    function cmp(i,w){let t=i;for(let x=0;x<w;x++)t=(t+300)*1.02;return t.toFixed(0);}
+    const posHTML = pos.length===0
+      ? `<div class="loading"><div class="sub">No open positions yet</div><div style="color:var(--cyan);font-size:.75rem;margin-top:.4rem">Log your first trade in the LOG tab</div></div>`
+      : `<div class="lbl" style="margin-bottom:.5rem">OPEN POSITIONS (${pos.length})</div>`+pos.map(p=>{
+          const wh=wk-p.entryWeek;
+          return `<div class="card"><div class="row"><div><span style="font-family:'Bebas Neue',cursive;font-size:1.4rem;color:${tc(p.type)}">${p.ticker}</span><span class="sub" style="margin-left:.5rem">${p.type}</span><div class="sub" style="margin-top:.15rem">${p.entryDate} · W${p.entryWeek} · ${wh}w held</div></div><div style="text-align:right"><div style="font-family:'Bebas Neue',cursive;font-size:1.55rem;color:var(--gold)">R${p.invested.toFixed(2)}</div><div class="sub">invested</div></div></div></div>`;
+        }).join('');
+    $('tab-portfolio').innerHTML = `
+      <div class="card" style="border-color:rgba(255,200,61,.2);background:rgba(255,200,61,.02)">
+        <div class="row" style="margin-bottom:.45rem"><div class="lbl">17-WEEK CHALLENGE PROGRESS</div><div style="font-family:'Bebas Neue',cursive;color:var(--gold)">Week ${wk} / ${WEEKS}</div></div>
+        <div class="pbar"><div class="pfill" style="width:${pct}%;background:linear-gradient(90deg,var(--gold),var(--orange));box-shadow:0 0 6px var(--gold)"></div></div>
+        <div class="g3" style="text-align:center;margin-top:1rem">
+          <div><div class="lbl">INVESTED</div><div style="font-family:'Bebas Neue',cursive;font-size:1.45rem;color:var(--gold)">R${inv.toFixed(0)}</div></div>
+          <div><div class="lbl">BUDGET</div><div style="font-family:'Bebas Neue',cursive;font-size:1.45rem;color:var(--cyan)">R${WEEKS*300}</div></div>
+          <div><div class="lbl">WEEKS LEFT</div><div style="font-family:'Bebas Neue',cursive;font-size:1.45rem;color:var(--green)">${wl}</div></div>
+        </div>
+      </div>
+      ${inv>0?`<div class="card"><div class="lbl" style="margin-bottom:.75rem">ALLOCATION BREAKDOWN</div>
+        ${[['ETFs',byt.ETF,'var(--cyan)'],['Shares',byt.Share,'var(--green)'],['Crypto',byt.Crypto,'var(--orange)']].map(([l,v,c])=>`
+          <div style="margin-bottom:.75rem">
+            <div class="row" style="margin-bottom:.2rem"><span style="color:${c};font-size:.74rem;font-weight:700">${l}</span><span class="sub">R${v.toFixed(0)}</span></div>
+            <div class="pbar"><div class="pfill" style="width:${inv>0?(v/inv*100):0}%;background:${c}"></div></div>
+          </div>`).join('')}
+      </div>`:''}
+      <div class="card"><div class="lbl" style="margin-bottom:.75rem">COMPOUND PROJECTIONS (2%/week)</div>
+        <div class="g3">
+          ${[4,8,wl].map(w=>`<div class="ibox" style="background:rgba(46,232,255,.04);border:1px solid rgba(46,232,255,.1);text-align:center"><div class="lbl">${w}W</div><div style="font-family:'Bebas Neue',cursive;font-size:1.3rem;color:var(--green)">R${cmp(inv,w)}</div></div>`).join('')}
+        </div>
+      </div>
+      ${posHTML}
+      <button class="ghost-btn" onclick="loadPortfolio()">REFRESH PORTFOLIO</button>`;
+  } catch(e) { $('tab-portfolio').innerHTML = err(e.message,"loadPortfolio()"); }
+}
+
+// ── LOG ───────────────────────────────────────────────────────────────────
+function initLog() {
+  logReady = true;
+  $('tab-log').innerHTML = `
+    <div class="card" style="border-color:rgba(77,255,159,.2)">
+      <div class="lbl" style="color:var(--green);margin-bottom:1rem">LOG TRADE</div>
+      <form id="tform">
+        <div class="fg2">
+          <div><label>TICKER</label><select id="f-ticker" required><option value="">Select…</option>${TLIST.map(t=>`<option>${t}</option>`).join('')}</select></div>
+          <div><label>TYPE</label><select id="f-type"><option>ETF</option><option>Share</option><option>Crypto</option></select></div>
+        </div>
+        <div class="fg2">
+          <div><label>ACTION</label><select id="f-action"><option>BUY</option><option>SELL</option><option>EXIT</option></select></div>
+          <div><label>AMOUNT (ZAR)</label><input type="number" id="f-amt" min="1" max="300" step="0.01" placeholder="e.g. 120" required></div>
+        </div>
+        <label>NOTE (optional)</label>
+        <input type="text" id="f-note" placeholder="e.g. Bought at market open">
+        <button type="submit" class="submit-btn" id="sbtn">LOG TRADE</button>
+      </form>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <div class="lbl">TRADE HISTORY</div>
+        <button style="background:none;border:none;color:var(--cyan);font-family:'Syne Mono',monospace;font-size:.68rem;cursor:pointer;letter-spacing:.08em" onclick="loadTrades()">REFRESH</button>
+      </div>
+      <div id="trades-list"><div class="loading"><div class="spinner"></div></div></div>
+    </div>`;
+
+  document.getElementById('tform').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = $('sbtn');
+    const ticker = $('f-ticker').value;
+    const amount = $('f-amt').value;
+    if (!ticker || !amount) return;
+    btn.disabled = true; btn.textContent = 'LOGGING…';
+    try {
+      await post('/api/trades',{
+        ticker, type:$('f-type').value, action:$('f-action').value,
+        amount:parseFloat(amount), note:$('f-note').value,
+        date:new Date().toISOString().split('T')[0], week:CW()
+      });
+      btn.classList.add('ok'); btn.textContent = '✓ LOGGED';
+      $('f-ticker').value=''; $('f-amt').value=''; $('f-note').value='';
+      loadTrades();
+      setTimeout(()=>{ btn.classList.remove('ok'); btn.textContent='LOG TRADE'; btn.disabled=false; }, 2200);
+    } catch(er) {
+      btn.textContent='ERROR — RETRY'; btn.style.color='var(--pink)'; btn.style.borderColor='var(--pink)'; btn.disabled=false;
+    }
+  });
+  loadTrades();
+}
+
+async function loadTrades() {
+  const el = $('trades-list'); if (!el) return;
+  try {
+    const ts = await api('/api/trades');
+    if (!ts.length) { el.innerHTML=`<div class="sub" style="text-align:center;padding:1.5rem 0">No trades logged yet</div>`; return; }
+    const AC = {BUY:'var(--green)',SELL:'var(--gold)',EXIT:'var(--pink)'};
+    el.innerHTML = ts.map(t=>`<div class="tr-row">
+      ${bdg(t.action, AC[t.action]||'var(--muted)')}
+      <span style="color:${tc(t.type)};font-weight:800;min-width:62px">${t.ticker}</span>
+      <span style="color:var(--gold);min-width:58px">R${t.amount?.toFixed(2)}</span>
+      ${bdg(t.type,tc(t.type))}
+      <span class="sub" style="flex:1;text-align:right">${t.date} W${t.week}</span>
+    </div>`).join('');
+  } catch {}
+}
+
+// ── Ticker tape ───────────────────────────────────────────────────────────
+function initTape() {
+  const ETFs   = TLIST.filter((_,i)=>i<13).map(t=>`<span class="ti etf">${t} ·</span>`);
+  const Shares = TLIST.filter((_,i)=>i>=13&&i<27).map(t=>`<span class="ti sh">${t} ·</span>`);
+  const Crypto = ['BTC','ETH'].map(t=>`<span class="ti cr">${t} ·</span>`);
+  const items  = [...ETFs,...Shares,...Crypto];
+  $('tape').innerHTML = [...items,...items].join(' ');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+(function init() {
+  const wk = CW();
+  $('wk').textContent = wk;
+  $('prog').style.width = `${((wk-1)/(WEEKS-1))*100}%`;
+  initTape();
+})();
+</script>
+</body>
+</html>
