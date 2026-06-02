@@ -1,0 +1,24 @@
+{
+  "name": "r300-trade-bot",
+  "version": "1.0.0",
+  "description": "Autonomous trading agent for JSE + VALR crypto — R300/week budget",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev:server": "node --watch server/index.js",
+    "dev:client": "npm run dev --prefix client",
+    "install:all": "npm install && npm install --prefix client",
+    "build:client": "npm run build --prefix client"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.0",
+    "axios": "^1.6.0",
+    "better-sqlite3": "^9.4.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.0",
+    "express": "^4.18.0",
+    "node-cron": "^3.0.3",
+    "node-telegram-bot-api": "^0.64.0",
+    "yahoo-finance2": "^2.11.0"
+  }
+}
