@@ -6,6 +6,7 @@ import WeekTab from './components/WeekTab';
 import ExitsTab from './components/ExitsTab';
 import PortfolioTab from './components/PortfolioTab';
 import LogTab from './components/LogTab';
+import SpinWheel from './components/SpinWheel';
 
 const TABS = [
   { id: 'today',     label: 'TODAY' },
@@ -13,6 +14,7 @@ const TABS = [
   { id: 'exits',     label: 'EXIT SIGNALS' },
   { id: 'portfolio', label: 'PORTFOLIO' },
   { id: 'log',       label: 'LOG' },
+  { id: 'spin',      label: '🎡 SPIN' },
 ];
 
 export default function App() {
@@ -23,6 +25,27 @@ export default function App() {
     setActiveTab(tab);
     setAutoLoad(prev => ({ ...prev, [tab]: (prev[tab] || 0) + 1 }));
   };
+
+  if (activeTab === 'spin') {
+    return (
+      <>
+        <div style={{ position: 'fixed', top: '12px', left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}>
+          <button
+            onClick={() => setActiveTab('today')}
+            style={{
+              background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.3)',
+              color: '#fff', padding: '6px 16px', borderRadius: '20px',
+              fontSize: '12px', letterSpacing: '0.06em', cursor: 'pointer',
+              fontFamily: "'Syne Mono', monospace", backdropFilter: 'blur(6px)'
+            }}
+          >
+            ← BACK TO TRADE SIGNAL
+          </button>
+        </div>
+        <SpinWheel />
+      </>
+    );
+  }
 
   return (
     <>
@@ -58,3 +81,4 @@ export default function App() {
     </>
   );
 }
+
