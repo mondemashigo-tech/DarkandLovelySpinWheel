@@ -1,6 +1,6 @@
 node_modules/
 client/node_modules/
 .env
-data/*.db
+data/
 dist/
 client/dist/
