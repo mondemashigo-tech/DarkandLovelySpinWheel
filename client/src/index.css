@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #080810;
+  --text: #E8E4FF;
+  --green: #4DFF9F;
+  --cyan: #2EE8FF;
+  --gold: #FFC83D;
+  --pink: #FF3D8A;
+  --orange: #FF8C00;
+  --card-bg: #0E0E1A;
+  --card-border: rgba(46, 232, 255, 0.12);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Syne Mono', monospace;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+.font-display { font-family: 'Bebas Neue', cursive; }
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(46, 232, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(46, 232, 255, 0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.4;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root { position: relative; z-index: 1; }
+
+.glow-blob-1 {
+  position: fixed; width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(77,255,159,0.05) 0%, transparent 70%);
+  top: -200px; left: -200px; pointer-events: none; z-index: 0;
+}
+
+.glow-blob-2 {
+  position: fixed; width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(46,232,255,0.05) 0%, transparent 70%);
+  bottom: -150px; right: -150px; pointer-events: none; z-index: 0;
+}
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-tape { animation: ticker 40s linear infinite; white-space: nowrap; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.4s ease forwards; opacity: 0; }
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.1s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.2s; }
+.delay-5 { animation-delay: 0.25s; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--green); }
+  50%       { opacity: 0.4; box-shadow: 0 0 14px var(--green); }
+}
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.card:hover { border-color: rgba(46, 232, 255, 0.28); transform: translateY(-2px); }
+
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 10px; border-radius: 4px;
+  font-size: 0.68rem; letter-spacing: 0.08em;
+  font-weight: 700; text-transform: uppercase;
+  font-family: 'Syne Mono', monospace;
+}
+
+.tab-btn {
+  padding: 0.45rem 1rem; border-radius: 6px;
+  font-size: 0.72rem; letter-spacing: 0.07em;
+  text-transform: uppercase; cursor: pointer;
+  transition: all 0.2s; background: transparent;
+  border: 1px solid rgba(232, 228, 255, 0.1);
+  color: rgba(232, 228, 255, 0.45);
+  font-family: 'Syne Mono', monospace;
+}
+.tab-btn:hover { border-color: rgba(46, 232, 255, 0.3); color: var(--cyan); }
+.tab-btn.active { background: rgba(46, 232, 255, 0.1); border-color: var(--cyan); color: var(--cyan); }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(46, 232, 255, 0.2);
+  border-top-color: var(--cyan);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #0a0a12; }
+::-webkit-scrollbar-thumb { background: rgba(46,232,255,0.18); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(46,232,255,0.35); }
+
+input, select, textarea {
+  background: rgba(14, 14, 26, 0.8);
+  border: 1px solid rgba(46, 232, 255, 0.15);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 0.5rem 0.75rem;
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.8rem;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: rgba(46, 232, 255, 0.4);
+}
+select option { background: #0E0E1A; }
+
+button:not(.tab-btn) {
+  font-family: 'Syne Mono', monospace;
+  cursor: pointer;
+  transition: all 0.2s;
+}
