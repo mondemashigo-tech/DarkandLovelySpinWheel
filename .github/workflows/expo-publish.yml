@@ -23,7 +23,7 @@ jobs:
         working-directory: mobile
 
       - name: Initialize EAS project
-        run: eas init --non-interactive
+        run: eas init --non-interactive --force
         working-directory: mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
