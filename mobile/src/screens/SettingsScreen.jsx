@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, Linking } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, StyleSheet, Linking } from 'react-native';
 import { useApi } from '../hooks/useApi';
 import { useBudget } from '../hooks/useBudget';
 import { API_URL } from '../config';
@@ -192,9 +192,9 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#080810' },
-  content: { padding: 16, paddingBottom: 48 },
+  content: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 32 },
   section: { marginBottom: 20 },
-  sectionTitle: { fontFamily: 'BebasNeue_400Regular', fontSize: 14, color: '#6B6B8A', letterSpacing: 2, marginBottom: 8 },
+  sectionTitle: { fontFamily: 'BebasNeue_400Regular', fontSize: 16, color: '#E8E4FF', letterSpacing: 2, marginBottom: 8 },
   sectionCard: { backgroundColor: '#12122A', borderRadius: 12, borderWidth: 1, borderColor: '#ffffff0D', overflow: 'hidden' },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: '#ffffff08' },
   rowLabel: { color: '#E8E4FF', fontSize: 13, fontFamily: 'SyneMono_400Regular', flex: 1 },
