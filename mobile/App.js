@@ -1,3 +1,4 @@
+// R300 Trade Bot v1.0.1
 import React from 'react';
 import { View, Text, StyleSheet, StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
