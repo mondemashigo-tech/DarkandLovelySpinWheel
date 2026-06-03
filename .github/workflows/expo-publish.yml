@@ -1,0 +1,28 @@
+name: Publish to Expo
+
+on:
+  push:
+    branches: [claude/r300-trade-bot-build-w6gVn, main]
+    paths: [mobile/**]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+        working-directory: mobile
+
+      - name: Publish to Expo Go
+        run: npx expo publish
+        working-directory: mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          CI: 1
