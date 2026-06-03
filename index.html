@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dark &amp; Lovely — Spin the Wheel</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      background: linear-gradient(160deg, #DAB1DA 0%, #b87fbf 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: "Gotham", "Gotham Book", -apple-system, BlinkMacSystemFont,
+                   "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #000004;
+      padding: 24px 16px;
+    }
+
+    header { text-align: center; margin-bottom: 12px; }
+    h2 {
+      margin: 0 0 4px;
+      font-weight: 800;
+      color: #ffffff;
+      font-size: clamp(28px, 5vw, 44px);
+      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    h3 {
+      color: #f0e6f0;
+      margin: 0 0 4px;
+      font-weight: 500;
+      font-size: clamp(14px, 2.5vw, 18px);
+    }
+
+    .wheel-wrap {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .pointer {
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.35));
+      transform: rotate(180deg);
+      margin-bottom: -4px;
+      z-index: 2;
+    }
+
+    #wheel {
+      filter: drop-shadow(0 12px 24px rgba(0,0,0,0.3));
+      width: min(480px, 90vw);
+      height: min(480px, 90vw);
+    }
+
+    #spin {
+      margin-top: 20px;
+      background-color: #67318C;
+      color: #fff;
+      border: none;
+      padding: 14px 36px;
+      border-radius: 50px;
+      font-size: clamp(16px, 2.5vw, 20px);
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(103,49,140,0.45);
+      transition: transform 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+      letter-spacing: 0.02em;
+    }
+    #spin:hover:not(:disabled) { transform: scale(1.06); box-shadow: 0 8px 26px rgba(103,49,140,0.55); }
+    #spin:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    #result {
+      margin-top: 18px;
+      min-height: 48px;
+      font-size: clamp(18px, 3vw, 24px);
+      font-weight: 700;
+      color: #ffffff;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      text-align: center;
+    }
+
+    #tally {
+      margin-top: 14px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 14px;
+      padding: 10px 20px;
+      font-size: 14px;
+      color: #fff;
+      text-align: center;
+    }
+    #tally span { font-weight: 700; }
+
+    #confetti-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="confetti-canvas"></canvas>
+
+  <header>
+    <h2>Dark &amp; Lovely</h2>
+    <h3>Spin for a chance to win amazing prizes!</h3>
+  </header>
+
+  <div class="wheel-wrap">
+    <svg class="pointer" width="48" height="36" viewBox="0 0 30 24" aria-hidden="true">
+      <polygon points="15,0 30,24 0,24" fill="#C0C0C0" />
+    </svg>
+
+    <svg id="wheel" viewBox="0 0 420 420" aria-label="Prize wheel">
+      <circle cx="210" cy="210" r="205" fill="none" stroke="#C0C0C0" stroke-width="8" />
+      <g id="rotor" transform="rotate(0 210 210)"></g>
+      <circle cx="210" cy="210" r="14" fill="#67318C" />
+    </svg>
+  </div>
+
+  <button id="spin">Spin the Wheel</button>
+  <p id="result"></p>
+
+  <div id="tally">
+    Spins: <span id="spin-count">0</span> &nbsp;|&nbsp; Wins: <span id="win-count">0</span>
+  </div>
+
+  <script>
+    const PRIZES = [
+      { label: "Brush",            color: "#ffffff", win: true  },
+      { label: "Wallet",           color: "#67318C", win: true  },
+      { label: "Comb Set",         color: "#D6CAE2", win: true  },
+      { label: "Hair Ties",        color: "#000004", win: true  },
+      { label: "Hair Curlers",     color: "#ffffff", win: true  },
+      { label: "Cosmetic Bag",     color: "#67318C", win: true  },
+      { label: "25% Off Voucher",  color: "#D6CAE2", win: true  },
+      { label: "Sorry, next time", color: "#000004", win: false },
+    ];
+
+    const N = PRIZES.length;
+    const sliceAngle = 360 / N;
+    const cx = 210, cy = 210, r = 190;
+
+    function polar(angleDeg) {
+      const rad = (angleDeg - 90) * Math.PI / 180;
+      return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    }
+    function arc(start, end) {
+      const s = polar(end), e = polar(start);
+      const large = (end - start) <= 180 ? '0' : '1';
+      return `M ${cx} ${cy} L ${s.x} ${s.y} A ${r} ${r} 0 ${large} 0 ${e.x} ${e.y} Z`;
+    }
+
+    const rotor = document.getElementById('rotor');
+    for (let i = 0; i < N; i++) {
+      const start = i * sliceAngle, end = (i + 1) * sliceAngle, mid = start + sliceAngle / 2;
+      const { color, label } = PRIZES[i];
+
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', arc(start, end));
+      path.setAttribute('fill', color);
+      path.setAttribute('stroke', '#D6CAE2');
+      path.setAttribute('stroke-width', '2');
+      g.appendChild(path);
+
+      const pos = polar(mid);
+      const tp = { x: cx + (pos.x - cx) * 0.68, y: cy + (pos.y - cy) * 0.68 };
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.setAttribute('x', tp.x);
+      text.setAttribute('y', tp.y);
+      text.setAttribute('text-anchor', 'middle');
+      text.setAttribute('dominant-baseline', 'middle');
+      text.setAttribute('font-size', '13');
+      text.setAttribute('font-weight', '600');
+      text.setAttribute('transform', `rotate(${mid} ${tp.x} ${tp.y})`);
+      text.setAttribute('fill', (color === '#ffffff' || color === '#D6CAE2') ? '#67318C' : '#ffffff');
+      text.textContent = label;
+      g.appendChild(text);
+
+      rotor.appendChild(g);
+    }
+
+    const btn = document.getElementById('spin');
+    const resultEl = document.getElementById('result');
+    const spinCountEl = document.getElementById('spin-count');
+    const winCountEl = document.getElementById('win-count');
+    let baseAngle = 0, spinning = false, totalSpins = 0, totalWins = 0;
+
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+    function animate(from, to, duration, onDone) {
+      const start = performance.now();
+      function frame(now) {
+        const t = Math.min(1, (now - start) / duration);
+        rotor.setAttribute('transform', `rotate(${from + (to - from) * easeOutCubic(t)} ${cx} ${cy})`);
+        if (t < 1) requestAnimationFrame(frame); else onDone();
+      }
+      requestAnimationFrame(frame);
+    }
+
+    btn.addEventListener('click', () => {
+      if (spinning) return;
+      spinning = true;
+      btn.disabled = true;
+      resultEl.textContent = '';
+
+      const winIdx = Math.floor(Math.random() * N);
+      const targetCenter = winIdx * sliceAngle + sliceAngle / 2;
+      const extraTurns = 5 + Math.floor(Math.random() * 4);
+      const next = baseAngle + extraTurns * 360 - targetCenter;
+
+      animate(baseAngle, next, 3000, () => {
+        baseAngle = ((next % 360) + 360) % 360;
+        const prize = PRIZES[winIdx];
+        totalSpins++;
+        if (prize.win) {
+          totalWins++;
+          resultEl.textContent = `🎉 YOU WIN: ${prize.label}!`;
+          launchConfetti();
+        } else {
+          resultEl.textContent = `😔 ${prize.label} — better luck next time!`;
+        }
+        spinCountEl.textContent = totalSpins;
+        winCountEl.textContent = totalWins;
+        spinning = false;
+        btn.disabled = false;
+      });
+    });
+
+    /* Confetti */
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [], animId = null;
+    const COLORS = ['#67318C','#DAB1DA','#C0C0C0','#ffffff','#D6CAE2','#b87fbf'];
+
+    function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function launchConfetti() {
+      particles = Array.from({ length: 120 }, () => ({
+        x: Math.random() * canvas.width,
+        y: -10,
+        w: 8 + Math.random() * 8,
+        h: 4 + Math.random() * 4,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        vx: (Math.random() - 0.5) * 4,
+        vy: 2 + Math.random() * 4,
+        rot: Math.random() * 360,
+        rotV: (Math.random() - 0.5) * 8,
+        life: 1,
+      }));
+      if (animId) cancelAnimationFrame(animId);
+      drawConfetti();
+    }
+
+    function drawConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles = particles.filter(p => p.life > 0);
+      for (const p of particles) {
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot * Math.PI / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.rotV;
+        if (p.y > canvas.height) p.life = 0; else p.life -= 0.008;
+      }
+      if (particles.length > 0) animId = requestAnimationFrame(drawConfetti);
+      else ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  </script>
+</body>
+</html>
