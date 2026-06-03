@@ -8,7 +8,12 @@
       "policy": "sdkVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/placeholder"
+      "url": "https://u.expo.dev/c6a24e98-ba19-4061-a65c-5000dbda64a0"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c6a24e98-ba19-4061-a65c-5000dbda64a0"
+      }
     },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
