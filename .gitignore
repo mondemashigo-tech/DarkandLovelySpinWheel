@@ -1,0 +1,26 @@
+# Secrets — never commit
+.env
+
+# Dependencies
+node_modules/
+client/node_modules/
+mobile/node_modules/
+
+# Expo
+mobile/.expo/
+mobile/dist/
+
+# Vite build
+client/dist/
+
+# SQLite database (runtime data)
+data/
+*.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
