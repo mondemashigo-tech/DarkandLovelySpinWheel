@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, Alert, StyleSheet, Linking } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, Linking, TextInput } from 'react-native';
 import { useApi } from '../hooks/useApi';
 import { useBudget } from '../hooks/useBudget';
-import { API_URL } from '../config';
+import { useApiUrl } from '../context/ApiUrlContext';
 
 function Row({ label, right, onPress }) {
   const Inner = (
@@ -25,46 +25,59 @@ function Section({ title, children }) {
 }
 
 export default function SettingsScreen() {
+  const { apiUrl, updateApiUrl } = useApiUrl();
   const { data: status, refetch: refetchStatus } = useApi('/api/status', 30000);
   const { budget } = useBudget();
   const [scanning, setScanning] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [urlDraft, setUrlDraft] = useState(apiUrl);
+  const [urlSaved, setUrlSaved] = useState(false);
+
+  const saveUrl = useCallback(async () => {
+    if (!urlDraft.startsWith('http')) {
+      Alert.alert('Invalid URL', 'URL must start with http:// or https://');
+      return;
+    }
+    await updateApiUrl(urlDraft);
+    setUrlSaved(true);
+    setTimeout(() => setUrlSaved(false), 2000);
+  }, [urlDraft, updateApiUrl]);
 
   const toggleAgent = useCallback(async () => {
     const endpoint = status?.paused ? 'resume' : 'pause';
     try {
-      await fetch(`${API_URL}/api/agent/${endpoint}`, { method: 'POST' });
+      await fetch(`${apiUrl}/api/agent/${endpoint}`, { method: 'POST' });
       await refetchStatus();
       Alert.alert('Done', status?.paused ? 'Agent resumed.' : 'Agent paused.');
     } catch {
-      Alert.alert('Error', 'Could not reach server. Check your API_URL in config.js.');
+      Alert.alert('Error', `Could not reach server at:\n${apiUrl}`);
     }
-  }, [status, refetchStatus]);
+  }, [status, refetchStatus, apiUrl]);
 
   const triggerScan = useCallback(async () => {
     setScanning(true);
     try {
-      await fetch(`${API_URL}/api/agent/scan`, { method: 'POST' });
+      await fetch(`${apiUrl}/api/agent/scan`, { method: 'POST' });
       Alert.alert('Scan Triggered', 'Check the Live Feed tab in ~30 seconds for results.');
     } catch {
-      Alert.alert('Error', 'Could not reach server. Is it running?');
+      Alert.alert('Error', `Could not reach server at:\n${apiUrl}\n\nIs node server/index.js running?`);
     } finally {
       setTimeout(() => setScanning(false), 3000);
     }
-  }, []);
+  }, [apiUrl]);
 
   const checkServer = useCallback(async () => {
     setChecking(true);
     try {
-      const res = await fetch(`${API_URL}/health`);
+      const res = await fetch(`${apiUrl}/health`);
       const data = await res.json();
-      Alert.alert('Server OK ✓', `Status: ${data.status}\nTimestamp: ${new Date(data.timestamp).toLocaleTimeString()}`);
+      Alert.alert('Server OK ✓', `Connected to:\n${apiUrl}\n\nStatus: ${data.status}`);
     } catch {
-      Alert.alert('Server Unreachable ✗', `Could not connect to:\n${API_URL}\n\nMake sure the server is running and your API_URL is set to your computer's local IP address.`);
+      Alert.alert('Server Unreachable ✗', `Could not connect to:\n${apiUrl}\n\n• Make sure node server/index.js is running on your PC\n• Check your phone and PC are on the same WiFi\n• Verify the IP in Server URL below`);
     } finally {
       setChecking(false);
     }
-  }, []);
+  }, [apiUrl]);
 
   const showTelegramHelp = () => {
     Alert.alert(
@@ -170,17 +183,37 @@ export default function SettingsScreen() {
         ))}
       </Section>
 
-      <Section title="CONNECTION">
-        <Row label="API Server URL" right={
-          <Text style={styles.urlText} numberOfLines={1}>{API_URL}</Text>
-        } />
-        <View style={styles.urlNote}>
-          <Text style={styles.urlNoteText}>
-            Edit mobile/src/config.js to change the server URL.{'\n'}
-            Physical device: use your computer's local IP (e.g. 192.168.1.x){'\n'}
-            Android emulator: use 10.0.2.2{'\n'}
-            iOS simulator: use localhost
+      <Section title="SERVER CONNECTION">
+        <View style={styles.urlBlock}>
+          <Text style={styles.urlLabel}>Backend Server URL</Text>
+          <Text style={styles.urlHint}>
+            Run {`ipconfig`} on your PC → WiFi IPv4 address{'\n'}
+            Format: http://192.168.x.x:3001
           </Text>
+          <View style={styles.urlInputRow}>
+            <TextInput
+              style={styles.urlInput}
+              value={urlDraft}
+              onChangeText={setUrlDraft}
+              placeholder="http://192.168.0.100:3001"
+              placeholderTextColor="#6B6B8A"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+            />
+            <TouchableOpacity
+              style={[styles.saveBtn, urlSaved && styles.saveBtnDone]}
+              onPress={saveUrl}
+            >
+              <Text style={[styles.saveBtnText, urlSaved && { color: '#4DFF9F' }]}>
+                {urlSaved ? 'SAVED ✓' : 'SAVE'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.activeUrlRow}>
+            <Text style={styles.activeUrlLabel}>Active: </Text>
+            <Text style={styles.activeUrlValue} numberOfLines={1}>{apiUrl}</Text>
+          </View>
         </View>
       </Section>
 
@@ -214,9 +247,34 @@ const styles = StyleSheet.create({
   limitCard: { flex: 1, backgroundColor: '#0D0D1A', borderRadius: 8, padding: 10, alignItems: 'center' },
   limitLabel: { color: '#6B6B8A', fontSize: 10, fontFamily: 'SyneMono_400Regular', marginBottom: 4 },
   limitValue: { fontFamily: 'BebasNeue_400Regular', fontSize: 22 },
-  urlText: { color: '#2EE8FF', fontSize: 11, fontFamily: 'SyneMono_400Regular' },
-  urlNote: { paddingHorizontal: 14, paddingBottom: 14 },
-  urlNoteText: { color: '#6B6B8A', fontSize: 10, fontFamily: 'SyneMono_400Regular', lineHeight: 16 },
+  urlBlock: { padding: 14 },
+  urlLabel: { color: '#E8E4FF', fontSize: 13, fontFamily: 'SyneMono_400Regular', marginBottom: 4 },
+  urlHint: { color: '#6B6B8A', fontSize: 10, fontFamily: 'SyneMono_400Regular', lineHeight: 16, marginBottom: 10 },
+  urlInputRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  urlInput: {
+    flex: 1,
+    backgroundColor: '#0D0D1A',
+    borderWidth: 1,
+    borderColor: '#2EE8FF44',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#E8E4FF',
+    fontSize: 12,
+    fontFamily: 'SyneMono_400Regular',
+  },
+  saveBtn: {
+    borderWidth: 1,
+    borderColor: '#2EE8FF44',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
+  },
+  saveBtnDone: { borderColor: '#4DFF9F44' },
+  saveBtnText: { fontFamily: 'BebasNeue_400Regular', fontSize: 14, color: '#2EE8FF' },
+  activeUrlRow: { flexDirection: 'row', alignItems: 'center' },
+  activeUrlLabel: { color: '#6B6B8A', fontSize: 10, fontFamily: 'SyneMono_400Regular' },
+  activeUrlValue: { color: '#2EE8FF', fontSize: 10, fontFamily: 'SyneMono_400Regular', flex: 1 },
   version: { textAlign: 'center', color: '#6B6B8A', fontSize: 11, fontFamily: 'SyneMono_400Regular', marginTop: 8 },
   disclaimer: { textAlign: 'center', color: '#FF3D8A', fontSize: 10, fontFamily: 'SyneMono_400Regular', marginTop: 6, marginBottom: 16 },
 });

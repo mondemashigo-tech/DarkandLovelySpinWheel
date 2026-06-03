@@ -2,6 +2,7 @@
   "expo": {
     "name": "R300 Trade Bot",
     "slug": "r300-trade-bot",
+    "owner": "mondemash",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

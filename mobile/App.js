@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, BebasNeue_400Regular } from '@expo-google-fonts/bebas-neue';
 import { SyneMono_400Regular } from '@expo-google-fonts/syne-mono';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ApiUrlProvider } from './src/context/ApiUrlContext';
 
 import LiveFeedScreen from './src/screens/LiveFeedScreen';
 import PositionsScreen from './src/screens/PositionsScreen';
@@ -52,6 +53,7 @@ export default function App() {
   if (!fontsLoaded) return <LoadingScreen />;
 
   return (
+    <ApiUrlProvider>
     <SafeAreaProvider>
       <StatusBar barStyle="light-content" backgroundColor="#080810" />
       <NavigationContainer theme={navTheme}>
@@ -73,6 +75,7 @@ export default function App() {
         </Tab.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
+    </ApiUrlProvider>
   );
 }
 
