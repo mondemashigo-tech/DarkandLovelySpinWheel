@@ -15,13 +15,21 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
       - name: Install dependencies
         run: npm install --legacy-peer-deps
         working-directory: mobile
 
-      - name: Publish to Expo Go
-        run: npx expo publish
+      - name: Initialize EAS project
+        run: eas init --non-interactive
         working-directory: mobile
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-          CI: 1
+
+      - name: Publish EAS Update
+        run: eas update --branch production --message "Deploy from GitHub Actions" --non-interactive
+        working-directory: mobile
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

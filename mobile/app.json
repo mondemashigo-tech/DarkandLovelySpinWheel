@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "R300 Trade Bot",
+    "slug": "r300-trade-bot",
+    "owner": "mondemash",
+    "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/placeholder"
+    },
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#080810"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.r300tradebot.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#080810"
+      },
+      "package": "com.r300tradebot.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
