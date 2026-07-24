@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.venv/
+venv/
+
+# Project Atlas — generated research artefacts (reproducible from config)
+03_Data/*.csv
+08_Reports/*.html
+08_Reports/*.pdf
+08_Reports/*.csv
+00_Dashboard/*.html
+04_Journal/*.ndjson
+09_Datasets/*.csv
+
+# OS
+.DS_Store

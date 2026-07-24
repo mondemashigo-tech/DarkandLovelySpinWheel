@@ -1,0 +1,3 @@
+# Project Atlas runtime dependencies.
+# The platform is deliberately dependency-light so results stay reproducible.
+PyYAML>=5.4

@@ -1,0 +1,102 @@
+# =============================================================================
+# Project Atlas — Baseline Hypothesis
+# -----------------------------------------------------------------------------
+# "London session breakout-and-retest on GBPUSD."
+#
+# This file is the PRE-REGISTRATION of the experiment. The rules and the
+# success/failure criteria are fixed BEFORE the test is run and must not be
+# changed mid-test. If the idea fails these criteria, it is rejected — not
+# re-tuned until it passes.
+# =============================================================================
+
+name: baseline_london_breakout
+description: >
+  GBPUSD, London session (08:00-11:00 UTC), Tue-Thu. H1 trend filter, M15
+  breakout of the prior range, M5 retest entry. Risk 1% per trade, 2R target,
+  with a news blackout filter.
+
+symbol: GBPUSD
+base_timeframe: M5
+
+# -- Synthetic dataset (used when no CSV is present) --------------------------
+data:
+  path: 03_Data/GBPUSD_M5.csv
+  bars: 80000                # ~1 year of 24x5 M5 bars (enough for a 200+ trade sample)
+  seed: 42                   # seeded => fully reproducible
+  annual_volatility: 0.08
+  annual_drift: 0.0
+  in_sample_fraction: 0.7    # first 70% in-sample, last 30% out-of-sample
+
+# -- Strategy rules -----------------------------------------------------------
+strategy:
+  trend:
+    timeframe: H1
+    ema_period: 50           # H1 close above/below EMA sets the tradable side
+  breakout:
+    timeframe: M15
+    donchian_period: 20      # break of the prior 20-bar M15 range
+  retest:
+    atr_period: 14
+    tolerance_atr: 0.6       # how close price must return to the level (in ATR)
+    window_bars: 8           # M15 bars a breakout stays "live" awaiting a retest
+  stop_atr_buffer: 0.5       # stop placed this many ATR beyond the retest low/high
+  reward_to_risk: 2.0        # 2R target
+
+# -- Filters ------------------------------------------------------------------
+filters:
+  session:
+    start: "08:00"           # London open (UTC)
+    end: "11:00"
+  days: [1, 2, 3]            # Tue, Wed, Thu  (Mon=0 .. Sun=6)
+  news_blackout_minutes: 15  # no entries within +/- 15 min of a news time
+  news_times:                # daily high-impact release times (UTC)
+    - "09:30"
+
+# -- Risk ---------------------------------------------------------------------
+risk:
+  initial_capital: 10000
+  risk_per_trade: 0.01       # 1% of equity risked per trade
+  max_position_fraction: 50  # cap notional at 50x equity (leverage guard)
+
+# -- Execution assumptions ----------------------------------------------------
+execution:
+  spread: 0.00008            # ~0.8 pip GBPUSD spread, applied against fills
+  commission: 0.0
+  max_holding_bars: 288      # force-close after one trading day of M5 bars
+
+# -- Pre-registered hypothesis criteria --------------------------------------
+hypothesis:
+  success:
+    profit_factor: 1.5
+    expectancy_positive: true
+    max_drawdown: 0.10
+    min_trades: 200
+  failure:
+    profit_factor: 1.2
+    max_drawdown: 0.15
+    expectancy_negative: true
+
+# -- Optimisation search space (in-sample only) ------------------------------
+optimization:
+  param_space:
+    strategy.breakout.donchian_period: [15, 20, 30]
+    strategy.trend.ema_period: [30, 50, 100]
+    strategy.reward_to_risk: [1.5, 2.0, 3.0]
+
+# -- Walk-forward analysis ----------------------------------------------------
+walk_forward:
+  train_bars: 4000
+  test_bars: 1500
+
+# -- Monte Carlo robustness ---------------------------------------------------
+monte_carlo:
+  simulations: 2000
+  ruin_fraction: 0.5
+
+# -- Output locations ---------------------------------------------------------
+reports:
+  dir: 08_Reports
+dashboard:
+  path: 00_Dashboard/baseline_london_breakout.html
+journal:
+  path: 04_Journal/journal.ndjson
